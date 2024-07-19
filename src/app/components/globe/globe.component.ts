@@ -20,15 +20,11 @@ export class GlobeComponent implements AfterViewInit {
       center: [-90, 40],
       accessToken:
         'pk.eyJ1IjoiYXNhZGFsaTEzMTAyIiwiYSI6ImNscndoZGg2czB2YTAyam5hY2U2eDVlYXAifQ.-spKATyM4-Xyucde1wHBbg',
+      doubleClickZoom: false,
     });
 
     map.on('style.load', () => {
       map.setFog({});
-    });
-
-    map.on('click', (e) => {
-      const zoom = map.getZoom();
-      map.easeTo({ center: e.lngLat, zoom: zoom + 1 });
     });
 
     const secondsPerRevolution = 120;
@@ -198,6 +194,22 @@ export class GlobeComponent implements AfterViewInit {
         });
       });
     });
+
+    // Add click event listener for markers
+    map.on('click', ['unclustered-point', 'clusters', 'cluster-count'], (e) => {
+      const zoom = map.getZoom();
+      map.easeTo({ center: e.lngLat, zoom: zoom + 2 });
+    });
+
+    // Add click event listener for markers
+    map.on(
+      'dblclick',
+      ['unclustered-point', 'clusters', 'cluster-count'],
+      (e) => {
+        const zoom = map.getZoom();
+        map.easeTo({ center: e.lngLat, zoom: zoom + 2 });
+      }
+    );
 
     spinGlobe();
   }
