@@ -14,7 +14,7 @@ export class GlobeComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     const map = new mapboxgl.Map({
       container: 'map',
-      style: 'mapbox://styles/mapbox/streets-v12',
+      style: 'mapbox://styles/mapbox/satellite-streets-v12',
       projection: 'globe',
       zoom: 2.0,
       center: [-90, 40],
@@ -24,6 +24,11 @@ export class GlobeComponent implements AfterViewInit {
 
     map.on('style.load', () => {
       map.setFog({});
+    });
+
+    map.on('click', (e) => {
+      const zoom = map.getZoom();
+      map.easeTo({ center: e.lngLat, zoom: zoom + 1 });
     });
 
     const secondsPerRevolution = 120;
@@ -98,22 +103,21 @@ export class GlobeComponent implements AfterViewInit {
       const maxLat = 37;
       const minLng = 60;
       const maxLng = 77;
-    
+
       for (let i = 0; i < num; i++) {
         const lat = Math.random() * (maxLat - minLat) + minLat;
         const lng = Math.random() * (maxLng - minLng) + minLng;
         coordinates.push({ lng, lat });
       }
-    
+
       return coordinates;
     };
-    
 
     // Generate 1000 random coordinates
     const randomCoordinates = generateRandomCoordinates(1000);
 
     // Convert locations to GeoJSON
-    const geojson= {
+    const geojson = {
       type: 'FeatureCollection',
       features: randomCoordinates.map((coord) => ({
         type: 'Feature',
@@ -125,77 +129,74 @@ export class GlobeComponent implements AfterViewInit {
     };
 
     map.on('load', () => {
-      map.loadImage(
-        '../../assets/marker-icon.png',
-        (error, image) => {
-          if (error) throw error;
+      map.loadImage('../../assets/marker-icon.png', (error, image) => {
+        if (error) throw error;
 
-          // Add the image to the map style.
-          map.addImage('mark', image!);
+        // Add the image to the map style.
+        map.addImage('mark', image!);
 
-          // Add GeoJSON source with clustering
-          map.addSource('locations', {
-            type: 'geojson',
-            data: geojson,
-            cluster: true,
-            clusterMaxZoom: 14,
-            clusterRadius: 50,
-          });
+        // Add GeoJSON source with clustering
+        map.addSource('locations', {
+          type: 'geojson',
+          data: geojson,
+          cluster: true,
+          clusterMaxZoom: 14,
+          clusterRadius: 50,
+        });
 
-          // Add cluster layer
-          map.addLayer({
-            id: 'clusters',
-            type: 'circle',
-            source: 'locations',
-            filter: ['has', 'point_count'],
-            paint: {
-              'circle-color': [
-                'step',
-                ['get', 'point_count'],
-                '#51bbd6',
-                100,
-                '#f1f075',
-                750,
-                '#f28cb1',
-              ],
-              'circle-radius': [
-                'step',
-                ['get', 'point_count'],
-                20,
-                100,
-                30,
-                750,
-                40,
-              ],
-            },
-          });
+        // Add cluster layer
+        map.addLayer({
+          id: 'clusters',
+          type: 'circle',
+          source: 'locations',
+          filter: ['has', 'point_count'],
+          paint: {
+            'circle-color': [
+              'step',
+              ['get', 'point_count'],
+              '#51bbd6',
+              100,
+              '#f1f075',
+              750,
+              '#f28cb1',
+            ],
+            'circle-radius': [
+              'step',
+              ['get', 'point_count'],
+              20,
+              100,
+              30,
+              750,
+              40,
+            ],
+          },
+        });
 
-          // Add cluster count layer
-          map.addLayer({
-            id: 'cluster-count',
-            type: 'symbol',
-            source: 'locations',
-            filter: ['has', 'point_count'],
-            layout: {
-              'text-field': '{point_count_abbreviated}',
-              'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-              'text-size': 12,
-            },
-          });
+        // Add cluster count layer
+        map.addLayer({
+          id: 'cluster-count',
+          type: 'symbol',
+          source: 'locations',
+          filter: ['has', 'point_count'],
+          layout: {
+            'text-field': '{point_count_abbreviated}',
+            'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+            'text-size': 12,
+          },
+        });
 
-          // Add unclustered point layer
-          map.addLayer({
-            id: 'unclustered-point',
-            type: 'symbol',
-            source: 'locations',
-            filter: ['!', ['has', 'point_count']],
-            layout: {
-              'icon-image': 'mark', // reference the image
-              'icon-size': 0.05
-          }
-          });
-        }
-      );
+        // Add unclustered point layer
+        map.addLayer({
+          id: 'unclustered-point',
+          type: 'symbol',
+          source: 'locations',
+          filter: ['!', ['has', 'point_count']],
+          layout: {
+            'icon-image': 'mark', // reference the image
+            'icon-size': 0.05,
+          },
+        });
+      });
     });
 
     spinGlobe();
